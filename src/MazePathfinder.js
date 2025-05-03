@@ -574,9 +574,8 @@ const MazePathfinder = () => {
         path: reconstructPath(cameFrom, current),
         evaluation: `Selected ${current}: f(n) = ${fScore[current].toFixed(
           1
-        )} = g(n): ${gScore[current].toFixed(1)} + h(n): ${
-          heuristics[current]
-        }`,
+        )} = g(n): ${gScore[current].toFixed(1)} + h(n): ${heuristics[current]
+          }`,
         neighbors: [],
         neighborEvaluations: [],
       };
@@ -680,344 +679,359 @@ const MazePathfinder = () => {
   const heuristics = calculateHeuristics();
 
   return (
-    <div className="flex flex-col items-center p-4">
-      <h1 className="text-2xl font-bold mb-4">Mazing Game using A*</h1>
+    <div className="overflow-x-auto">
+      <div className="flex flex-col items-center p-4">
+        <h1 className="text-2xl font-bold mb-4">Mazing Game using A*</h1>
 
-      {!isSearchStarted ? (
-        <button
-          onClick={startSearch}
-          className="px-4 py-2 bg-blue-500 text-white rounded mb-4"
-        >
-          Start A* Search
-        </button>
-      ) : (
-        <div className="flex gap-2 mb-4">
-          <button
-            onClick={prevStep}
-            disabled={currentStepIndex === 0}
-            className={`px-4 py-2 rounded ${
-              currentStepIndex === 0 ? "bg-gray-300" : "bg-blue-500 text-white"
-            }`}
-          >
-            Previous Step
-          </button>
-          <button
-            onClick={nextStep}
-            disabled={currentStepIndex === searchResult.steps.length - 1}
-            className={`px-4 py-2 rounded ${
-              currentStepIndex === searchResult.steps.length - 1
-                ? "bg-gray-300"
-                : "bg-blue-500 text-white"
-            }`}
-          >
-            Next Step
-          </button>
-          <span className="px-4 py-2">
-            Step {currentStepIndex + 1} of {searchResult.steps.length}
-          </span>
-        </div>
-      )}
+        <div className="flex flex-row gap-8 items-start">
+          {/* Left Column: Maze + Legend/Controls */}
+          <div className="flex flex-col">
+            {/* Maze Container */}
+            <div className="border rounded p-4">
+              <h2 className="text-lg font-semibold mb-2">Maze Visualization</h2>
+              <div className="relative">
+                <svg width="750" height="500" viewBox="0 0 750 500">
+                  {/* Draw grid - Updated for 10x15 */}
+                  {Array.from({ length: 10 }).map((_, row) =>
+                    Array.from({ length: 15 }).map((_, col) => {
+                      const cellKey = `(${row + 1}, ${col + 1})`;
+                      const cell = mazeData[cellKey];
+                      const x = col * 50;
+                      const y = row * 50;
+                      return (
+                        <g key={cellKey}>
+                          {/* Draw walls */}
+                          {cell && cell.N === 0 && (
+                            <line
+                              x1={x}
+                              y1={y}
+                              x2={x + 50}
+                              y2={y}
+                              stroke="black"
+                              strokeWidth="2"
+                            />
+                          )}
+                          {cell && cell.S === 0 && (
+                            <line
+                              x1={x}
+                              y1={y + 50}
+                              x2={x + 50}
+                              y2={y + 50}
+                              stroke="black"
+                              strokeWidth="2"
+                            />
+                          )}
+                          {cell && cell.E === 0 && (
+                            <line
+                              x1={x + 50}
+                              y1={y}
+                              x2={x + 50}
+                              y2={y + 50}
+                              stroke="black"
+                              strokeWidth="2"
+                            />
+                          )}
+                          {cell && cell.W === 0 && (
+                            <line
+                              x1={x}
+                              y1={y}
+                              x2={x}
+                              y2={y + 50}
+                              stroke="black"
+                              strokeWidth="2"
+                            />
+                          )}
 
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* Maze Visualization - Updated for 10x15 grid */}
-        <div className="border rounded p-4 overflow-auto">
-          <h2 className="text-lg font-semibold mb-2">Maze Visualization</h2>
-          <div className="relative">
-            <svg width="1200" height="800" viewBox="0 0 750 500">
-              {/* Draw grid - Updated for 10x15 */}
-              {Array.from({ length: 10 }).map((_, row) =>
-                Array.from({ length: 15 }).map((_, col) => {
-                  const cellKey = `(${row + 1}, ${col + 1})`;
-                  const cell = mazeData[cellKey];
-                  const x = col * 50;
-                  const y = row * 50;
-                  return (
-                    <g key={cellKey}>
-                      {/* Draw walls */}
-                      {cell && cell.N === 0 && (
-                        <line
-                          x1={x}
-                          y1={y}
-                          x2={x + 50}
-                          y2={y}
+                          {/* Draw cell */}
+                          <rect
+                            x={x + 5}
+                            y={y + 5}
+                            width={40}
+                            height={40}
+                            fill="white"
+                            stroke="none"
+                          />
+                        </g>
+                      );
+                    })
+                  )}
+
+                  {/* Draw nodes with heuristic values */}
+                  {nodesWithHeuristics.map((node) => {
+                    const [row, col] = node
+                      .replace(/[()]/g, "")
+                      .split(", ")
+                      .map(Number);
+                    const x = (col - 1) * 50 + 25;
+                    const y = (row - 1) * 50 + 25;
+
+                    return (
+                      <g key={`node-${node}`}>
+                        <circle
+                          cx={x}
+                          cy={y}
+                          r={12}
+                          strokeDasharray="3,3"
                           stroke="black"
-                          strokeWidth="2"
+                          strokeWidth="1"
+                          fill={
+                            node === "(1, 1)"
+                              ? "lightgreen"
+                              : node === "(10, 15)"
+                                ? "lightcoral"
+                                : currentStep && currentStep.current === node
+                                  ? "yellow"
+                                  : currentStep && currentStep.path.includes(node)
+                                    ? "lightblue"
+                                    : currentStep && currentStep.openSet.includes(node)
+                                      ? "lightgray"
+                                      : "white"
+                          }
                         />
-                      )}
-                      {cell && cell.S === 0 && (
+                        <text x={x} y={y + 3} textAnchor="middle" fontSize="8">
+                          {heuristics[node]}
+                        </text>
+                        <text x={x} y={y - 15} textAnchor="middle" fontSize="8">
+                          {node}
+                        </text>
+                      </g>
+                    );
+                  })}
+
+                  {/* Draw edges between nodes - with optimized display for larger grid */}
+                  {edges.map(([node1, node2], index) => {
+                    const [row1, col1] = node1
+                      .replace(/[()]/g, "")
+                      .split(", ")
+                      .map(Number);
+                    const [row2, col2] = node2
+                      .replace(/[()]/g, "")
+                      .split(", ")
+                      .map(Number);
+
+                    const x1 = (col1 - 1) * 50 + 25;
+                    const y1 = (row1 - 1) * 50 + 25;
+                    const x2 = (col2 - 1) * 50 + 25;
+                    const y2 = (row2 - 1) * 50 + 25;
+
+                    const edgeKey1 = `${node1}-${node2}`;
+                    const edgeKey2 = `${node2}-${node1}`;
+                    const weight = edgeWeights[edgeKey1] || edgeWeights[edgeKey2];
+
+                    // Calculate midpoint for weight label
+                    const midX = (x1 + x2) / 2;
+                    const midY = (y1 + y2) / 2;
+
+                    // Check if this edge is part of the current path
+                    const isInPath =
+                      currentStep &&
+                      currentStep.path.some(
+                        (node, i) =>
+                          i < currentStep.path.length - 1 &&
+                          ((currentStep.path[i] === node1 &&
+                            currentStep.path[i + 1] === node2) ||
+                            (currentStep.path[i] === node2 &&
+                              currentStep.path[i + 1] === node1))
+                      );
+
+                    return (
+                      <g key={`edge-${index}`}>
                         <line
-                          x1={x}
-                          y1={y + 50}
-                          x2={x + 50}
-                          y2={y + 50}
-                          stroke="black"
-                          strokeWidth="2"
+                          x1={x1}
+                          y1={y1}
+                          x2={x2}
+                          y2={y2}
+                          stroke={isInPath ? "blue" : "gray"}
+                          strokeWidth={isInPath ? "3" : "1"}
                         />
-                      )}
-                      {cell && cell.E === 0 && (
-                        <line
-                          x1={x + 50}
-                          y1={y}
-                          x2={x + 50}
-                          y2={y + 50}
-                          stroke="black"
-                          strokeWidth="2"
+                        <circle
+                          cx={midX}
+                          cy={midY}
+                          r={6}
+                          fill="white"
+                          stroke="gray"
                         />
-                      )}
-                      {cell && cell.W === 0 && (
-                        <line
-                          x1={x}
-                          y1={y}
-                          x2={x}
-                          y2={y + 50}
-                          stroke="black"
-                          strokeWidth="2"
-                        />
-                      )}
-
-                      {/* Draw cell */}
-                      <rect
-                        x={x + 5}
-                        y={y + 5}
-                        width={40}
-                        height={40}
-                        fill="white"
-                        stroke="none"
-                      />
-                    </g>
-                  );
-                })
-              )}
-
-              {/* Draw nodes with heuristic values */}
-              {nodesWithHeuristics.map((node) => {
-                const [row, col] = node
-                  .replace(/[()]/g, "")
-                  .split(", ")
-                  .map(Number);
-                const x = (col - 1) * 50 + 25;
-                const y = (row - 1) * 50 + 25;
-
-                return (
-                  <g key={`node-${node}`}>
-                    <circle
-                      cx={x}
-                      cy={y}
-                      r={12}
-                      strokeDasharray="3,3"
-                      stroke="black"
-                      strokeWidth="1"
-                      fill={
-                        node === "(1, 1)"
-                          ? "lightgreen"
-                          : node === "(10, 15)"
-                          ? "lightcoral"
-                          : currentStep && currentStep.current === node
-                          ? "yellow"
-                          : currentStep && currentStep.path.includes(node)
-                          ? "lightblue"
-                          : currentStep && currentStep.openSet.includes(node)
-                          ? "lightgray"
-                          : "white"
-                      }
-                    />
-                    <text x={x} y={y + 3} textAnchor="middle" fontSize="8">
-                      {heuristics[node]}
-                    </text>
-                    <text x={x} y={y - 15} textAnchor="middle" fontSize="8">
-                      {node}
-                    </text>
-                  </g>
-                );
-              })}
-
-              {/* Draw edges between nodes - with optimized display for larger grid */}
-              {edges.map(([node1, node2], index) => {
-                const [row1, col1] = node1
-                  .replace(/[()]/g, "")
-                  .split(", ")
-                  .map(Number);
-                const [row2, col2] = node2
-                  .replace(/[()]/g, "")
-                  .split(", ")
-                  .map(Number);
-
-                const x1 = (col1 - 1) * 50 + 25;
-                const y1 = (row1 - 1) * 50 + 25;
-                const x2 = (col2 - 1) * 50 + 25;
-                const y2 = (row2 - 1) * 50 + 25;
-
-                const edgeKey1 = `${node1}-${node2}`;
-                const edgeKey2 = `${node2}-${node1}`;
-                const weight = edgeWeights[edgeKey1] || edgeWeights[edgeKey2];
-
-                // Calculate midpoint for weight label
-                const midX = (x1 + x2) / 2;
-                const midY = (y1 + y2) / 2;
-
-                // Check if this edge is part of the current path
-                const isInPath =
-                  currentStep &&
-                  currentStep.path.some(
-                    (node, i) =>
-                      i < currentStep.path.length - 1 &&
-                      ((currentStep.path[i] === node1 &&
-                        currentStep.path[i + 1] === node2) ||
-                        (currentStep.path[i] === node2 &&
-                          currentStep.path[i + 1] === node1))
-                  );
-
-                return (
-                  <g key={`edge-${index}`}>
-                    <line
-                      x1={x1}
-                      y1={y1}
-                      x2={x2}
-                      y2={y2}
-                      stroke={isInPath ? "blue" : "gray"}
-                      strokeWidth={isInPath ? "3" : "1"}
-                    />
-                    <circle
-                      cx={midX}
-                      cy={midY}
-                      r={6}
-                      fill="white"
-                      stroke="gray"
-                    />
-                    <text
-                      x={midX}
-                      y={midY + 2}
-                      textAnchor="middle"
-                      fontSize="7"
-                    >
-                      {weight}
-                    </text>
-                  </g>
-                );
-              })}
-            </svg>
-          </div>
-          <div className="mt-4">
-            <h3 className="font-semibold mb-1">Legend:</h3>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-lightgreen"></div>
-                <span>Start Node (1,1)</span>
+                        <text
+                          x={midX}
+                          y={midY + 2}
+                          textAnchor="middle"
+                          fontSize="7"
+                        >
+                          {weight}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </svg>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-lightcoral"></div>
-                <span>Goal Node (5,5)</span>
-              </div>
-              {isSearchStarted && (
-                <>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-yellow"></div>
-                    <span>Current Node</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-lightblue"></div>
-                    <span>Path Nodes</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-lightgray"></div>
-                    <span>Open Set</span>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* A* Algorithm Details */}
-        {isSearchStarted && currentStep && (
-          <div className="border rounded p-4 max-w-md">
-            <h2 className="text-lg font-semibold mb-2">A* Algorithm Details</h2>
-
-            <div className="mb-4">
-              <h3 className="font-medium">Current Node Evaluation:</h3>
-              <p className="text-sm">{currentStep.evaluation}</p>
             </div>
 
-            <div className="mb-4">
-              <h3 className="font-medium">Open Set:</h3>
-              {currentStep.openSet.length > 0 ? (
-                <ul className="text-sm">
-                  {currentStep.openSet
-                    .map((node) => ({
-                      node,
-                      fScore: currentStep.fScore[node],
-                    }))
-                    .sort((a, b) => a.fScore - b.fScore)
-                    .map((item, i) => (
-                      <li key={i} className={i === 0 ? "font-medium" : ""}>
-                        {item.node}: f(n) = {item.fScore.toFixed(1)}
-                        {i === 0 &&
-                          currentStep.current !== item.node &&
-                          " (lowest f-score)"}
-                      </li>
-                    ))}
-                </ul>
-              ) : (
-                <p className="text-sm">Empty</p>
-              )}
-            </div>
-
-            <div className="mb-4">
-              <h3 className="font-medium">Current Path:</h3>
-              <p className="text-sm">
-                {currentStep.path.join(" → ") || "None"}
-              </p>
-            </div>
-
-            {currentStep.neighbors.length > 0 && (
+            {/* Legend and Controls Container - Below Maze */}
+            <div className="mt-4 border rounded p-4 flex justify-between items-start gap-8">
+              {/* Legend */}
               <div>
-                <h3 className="font-medium">Neighbor Evaluations:</h3>
-                <ul className="text-sm">
-                  {currentStep.neighborEvaluations.map((evaluation, i) => (
-                    <li key={i} className="mb-1">
-                      <span className="font-medium">{evaluation.neighbor}</span>
-                      :
-                      {evaluation.better ? (
-                        <span>
-                          New path is better! g(n):{" "}
-                          {evaluation.tentativeGScore.toFixed(1)} {"<"}{" "}
-                          {evaluation.currentGScore === Infinity
-                            ? "∞"
-                            : evaluation.currentGScore.toFixed(1)}
-                        </span>
-                      ) : (
-                        <span>
-                          Current path is better or equal. g(n):{" "}
-                          {evaluation.tentativeGScore.toFixed(1)} {"≥"}{" "}
-                          {evaluation.currentGScore === Infinity
-                            ? "∞"
-                            : evaluation.currentGScore.toFixed(1)}
-                        </span>
-                      )}
-                      {evaluation.newFScore != null && (
-                        <span>
-                          {" "}
-                          → New f(n): {evaluation.newFScore.toFixed(1)}
-                        </span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
+              <h3 className="font-medium mb-2 text-left">Legend:</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-lightgreen"></div>
+                    <span>Start Node (1,1)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-lightcoral"></div>
+                    <span>Goal Node (10,15)</span>
+                  </div>
+                  {isSearchStarted && (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 bg-yellow"></div>
+                        <span>Current Node</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 bg-lightblue"></div>
+                        <span>Path Nodes</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 bg-lightgray"></div>
+                        <span>Open Set</span>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
-            )}
 
-            {currentStepIndex === searchResult.steps.length - 1 && (
-              <div className="mt-4 p-2 bg-green-100 border border-green-400 rounded">
-                <h3 className="font-medium">Result:</h3>
-                {searchResult.success ? (
-                  <p>Path found! Length: {searchResult.path.length} nodes</p>
+              {/* Controls */}
+              <div className="text-center">
+                {!isSearchStarted ? (
+                  <button
+                    onClick={startSearch}
+                    className="px-4 py-2 bg-blue-500 text-white rounded"
+                  >
+                    Start A* Search
+                  </button>
                 ) : (
-                  <p>No path found to goal.</p>
+                  <div className="text-center">
+                    <div className="flex gap-2 mb-2">
+                      <button
+                        onClick={prevStep}
+                        disabled={currentStepIndex === 0}
+                        className={`px-4 py-2 rounded ${
+                          currentStepIndex === 0 ? "bg-gray-300" : "bg-blue-500 text-white"
+                        }`}
+                      >
+                        Previous
+                      </button>
+                      <button
+                        onClick={nextStep}
+                        disabled={currentStepIndex === searchResult.steps.length - 1}
+                        className={`px-4 py-2 rounded ${
+                          currentStepIndex === searchResult.steps.length - 1
+                            ? "bg-gray-300"
+                            : "bg-blue-500 text-white"
+                        }`}
+                      >
+                        Next
+                      </button>
+                    </div>
+                    <div>
+                      Step {currentStepIndex + 1} of {searchResult.steps.length}
+                    </div>
+                  </div>
                 )}
               </div>
-            )}
+            </div>
           </div>
-        )}
+
+          {/* Right Column: A* Algorithm Details */}
+          {isSearchStarted && currentStep && (
+            <div className="border rounded p-4" style={{ width: '350px' }}>
+              <h2 className="text-lg font-semibold mb-2">A* Algorithm Details</h2>
+
+              <div className="mb-4">
+                <h3 className="font-medium">Current Node Evaluation:</h3>
+                <p className="text-sm">{currentStep.evaluation}</p>
+              </div>
+
+              <div className="mb-4">
+                <h3 className="font-medium">Open Set:</h3>
+                {currentStep.openSet.length > 0 ? (
+                  <ul className="text-sm" style={{ listStyleType: 'none', padding: 0, margin: 0 }}>
+                    {currentStep.openSet
+                      .map((node) => ({
+                        node,
+                        fScore: currentStep.fScore[node],
+                      }))
+                      .sort((a, b) => a.fScore - b.fScore)
+                      .map((item, i) => (
+                        <li key={i} className={i === 0 ? "font-medium" : ""}>
+                          {item.node}: f(n) = {item.fScore.toFixed(1)}
+                          {i === 0 &&
+                            currentStep.current !== item.node &&
+                            " (lowest f-score)"}
+                        </li>
+                      ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm">Empty</p>
+                )}
+              </div>
+
+              <div className="mb-4">
+                <h3 className="font-medium">Current Path:</h3>
+                <p className="text-sm">
+                  {currentStep.path.join(" → ") || "None"}
+                </p>
+              </div>
+
+              {currentStep.neighbors.length > 0 && (
+                <div>
+                  <h3 className="font-medium">Neighbor Evaluations:</h3>
+                  <ul className="text-sm" style={{ listStyleType: 'none', padding: 0, margin: 0 }}>
+                    {currentStep.neighborEvaluations.map((evaluation, i) => (
+                      <li key={i} className="mb-1">
+                        <span className="font-medium">{evaluation.neighbor}</span>
+                        :
+                        {evaluation.better ? (
+                          <span>
+                            New path is better! g(n):{" "}
+                            {evaluation.tentativeGScore.toFixed(1)} {"<"}{" "}
+                            {evaluation.currentGScore === Infinity
+                              ? "∞"
+                              : evaluation.currentGScore.toFixed(1)}
+                          </span>
+                        ) : (
+                          <span>
+                            Current path is better or equal. g(n):{" "}
+                            {evaluation.tentativeGScore.toFixed(1)} {"≥"}{" "}
+                            {evaluation.currentGScore === Infinity
+                              ? "∞"
+                              : evaluation.currentGScore.toFixed(1)}
+                          </span>
+                        )}
+                        {evaluation.newFScore != null && (
+                          <span>
+                            {" "}
+                            → New f(n): {evaluation.newFScore.toFixed(1)}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {currentStepIndex === searchResult.steps.length - 1 && (
+                <div className="mt-4 p-2 bg-green-100 border border-green-400 rounded">
+                  <h3 className="font-medium">Result:</h3>
+                  {searchResult.success ? (
+                    <p>Path found! Length: {searchResult.path.length} nodes</p>
+                  ) : (
+                    <p>No path found to goal.</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
