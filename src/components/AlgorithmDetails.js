@@ -1,0 +1,95 @@
+import React from 'react';
+
+const AlgorithmDetails = ({ currentStep, isLastStep, searchResult }) => {
+  if (!currentStep) return null;
+  
+  return (
+    <div className="border rounded p-4" style={{ width: '350px' }}>
+
+      <div className="mb-2">
+        <h4 className="font-medium">Current Node Evaluation:</h4>
+        <p className="text-sm">{currentStep.evaluation}</p>
+      </div>
+
+      <div className="mb-2">
+        <h4 className="font-medium">Open Set:</h4>
+        {currentStep.openSet.length > 0 ? (
+          <p className="text-sm">
+            {currentStep.openSet
+              .map((node) => ({
+                node,
+                fScore: currentStep.fScore[node],
+              }))
+              .sort((a, b) => a.fScore - b.fScore)
+              .map((item, i) => (
+                <span key={i} className={i === 0 ? "font-medium" : ""}>
+                  {item.node}: {item.fScore.toFixed(1)}
+                  {i === 0 && currentStep.current !== item.node && " (lowest)"}
+                  {i < currentStep.openSet.length - 1 ? ", " : ""}
+                </span>
+              ))}
+          </p>
+        ) : (
+          <p className="text-sm">Empty</p>
+        )}
+      </div>
+
+      <div className="mb-2">
+        <h4 className="font-medium">Current Path:</h4>
+        <p className="text-sm">
+          {currentStep.path.join(" → ") || "None"}
+        </p>
+      </div>
+
+      {currentStep.neighbors.length > 0 && (
+        <div>
+          <h4 className="font-medium">Neighbor Evaluations:</h4>
+          <ul className="text-sm" style={{ listStyleType: 'none', padding: 0, margin: 0 }}>
+            {currentStep.neighborEvaluations.map((evaluation, i) => (
+              <li key={i} className="mb-1">
+                <span className="font-medium">{evaluation.neighbor}</span>
+                :
+                {evaluation.better ? (
+                  <span>
+                    New path is better! g(n):{" "}
+                    {evaluation.tentativeGScore.toFixed(1)} {"<"}{" "}
+                    {evaluation.currentGScore === Infinity
+                      ? "∞"
+                      : evaluation.currentGScore.toFixed(1)}
+                  </span>
+                ) : (
+                  <span>
+                    Current path is better or equal. g(n):{" "}
+                    {evaluation.tentativeGScore.toFixed(1)} {"≥"}{" "}
+                    {evaluation.currentGScore === Infinity
+                      ? "∞"
+                      : evaluation.currentGScore.toFixed(1)}
+                  </span>
+                )}
+                {evaluation.newFScore != null && (
+                  <span>
+                    {" "}
+                    → New f(n): {evaluation.newFScore.toFixed(1)}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {isLastStep && (
+        <div className="mt-4 p-2 bg-green-100 border border-green-400 rounded">
+          <h4 className="font-medium">Result:</h4>
+          {searchResult.success ? (
+            <p>Path found! Length: {searchResult.path.length} nodes</p>
+          ) : (
+            <p>No path found to goal.</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default AlgorithmDetails;
