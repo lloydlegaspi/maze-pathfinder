@@ -33,6 +33,18 @@ const MazePathfinder = () => {
     }
   };
 
+  // Reset to first step
+  const resetSearch = () => {
+    setCurrentStepIndex(0);
+  };
+
+  // Fast forward to last step
+  const fastForward = () => {
+    if (searchResult && searchResult.steps.length > 0) {
+      setCurrentStepIndex(searchResult.steps.length - 1);
+    }
+  };
+
   // Current step data
   const currentStep =
     isSearchStarted && searchResult
@@ -66,11 +78,13 @@ const MazePathfinder = () => {
           <div className="flex flex-col gap-4">
             {/* Controls Panel */}
             <div className="border rounded p-4 justify-center items-center w-full">
-              <ControlPanel
+            <ControlPanel
                 isSearchStarted={isSearchStarted}
                 startSearch={startSearch}
                 prevStep={prevStep}
                 nextStep={nextStep}
+                resetSearch={resetSearch}
+                fastForward={fastForward}
                 currentStepIndex={currentStepIndex}
                 totalSteps={searchResult?.steps.length || 0}
               />

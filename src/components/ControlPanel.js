@@ -4,7 +4,9 @@ const ControlPanel = ({
   isSearchStarted, 
   startSearch, 
   prevStep, 
-  nextStep, 
+  nextStep,
+  resetSearch,
+  fastForward,
   currentStepIndex, 
   totalSteps 
 }) => {
@@ -20,6 +22,16 @@ const ControlPanel = ({
       ) : (
         <div className="text-center">
           <div className="flex gap-2 mb-2">
+            <button
+              onClick={resetSearch}
+              disabled={currentStepIndex === 0}
+              className={`px-4 py-2 rounded ${
+                currentStepIndex === 0 ? "bg-gray-300" : "bg-blue-500 text-white"
+              }`}
+              title="Reset to first step"
+            >
+              Reset
+            </button>
             <button
               onClick={prevStep}
               disabled={currentStepIndex === 0}
@@ -39,6 +51,18 @@ const ControlPanel = ({
               }`}
             >
               Next
+            </button>
+            <button
+              onClick={fastForward}
+              disabled={currentStepIndex === totalSteps - 1}
+              className={`px-4 py-2 rounded ${
+                currentStepIndex === totalSteps - 1
+                  ? "bg-gray-300"
+                  : "bg-blue-500 text-white"
+              }`}
+              title="Jump to final step"
+            >
+              End
             </button>
           </div>
           <div>
