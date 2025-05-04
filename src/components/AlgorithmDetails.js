@@ -77,7 +77,7 @@ const AlgorithmDetails = ({ currentStep, isLastStep, searchResult }) => {
                   </span>
                 ) : evaluation.better ? (
                   <span>
-                    New path is better! g(n):{" "}
+                    g(n):{" "}
                     {evaluation.tentativeGScore.toFixed(1)} {"<"}{" "}
                     {evaluation.currentGScore === Infinity
                       ? "∞"

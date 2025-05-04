@@ -1,4 +1,19 @@
 import { nodesWithHeuristics, edges, edgeWeights } from './mazeData';
+import { PriorityQueue } from '../utils/pQueue';
+
+// Build adjacency list for O(1) neighbor access
+const buildAdjacencyList = () => {
+  const adjacencyList = {};
+  edges.forEach(([a, b]) => {
+    if (!adjacencyList[a]) adjacencyList[a] = [];
+    if (!adjacencyList[b]) adjacencyList[b] = [];
+    adjacencyList[a].push(b);
+    adjacencyList[b].push(a);
+  });
+  return adjacencyList;
+};
+
+const adjacencyList = buildAdjacencyList();
 
 // Calculate Manhattan distance for heuristic
 export const calculateManhattanDistance = (pos1, pos2) => {
@@ -26,16 +41,9 @@ export const getEdgeWeight = (node1, node2) => {
   return edgeWeights[key1] || edgeWeights[key2] || Infinity;
 };
 
-// Get neighbors of a node based on graph edges
+// Get neighbors of a node using adjacency list
 export const getNeighbors = (node) => {
-  const neighbors = [];
-
-  edges.forEach(([a, b]) => {
-    if (a === node) neighbors.push(b);
-    if (b === node) neighbors.push(a);
-  });
-
-  return neighbors;
+  return adjacencyList[node] || [];
 };
 
 // Reconstruct path from start to current based on cameFrom map
@@ -48,66 +56,77 @@ export const reconstructPath = (cameFrom, current) => {
   return totalPath;
 };
 
-// A* search algorithm implementation
+// A* search algorithm with priority queue
 export const aStarSearch = () => {
   const start = "(1, 1)";
   const goal = "(10, 15)";
   const heuristics = calculateHeuristics();
 
-  const openSet = [start];
+  const openQueue = new PriorityQueue();
   const closedSet = new Set();
   const cameFrom = {};
   const gScore = {};
   const fScore = {};
 
-  // Initialize with infinity for all nodes
+  // Initialize scores
   nodesWithHeuristics.forEach((node) => {
     gScore[node] = Infinity;
     fScore[node] = Infinity;
   });
-
   gScore[start] = 0;
   fScore[start] = heuristics[start];
 
+  openQueue.enqueue(start, fScore[start]);
+
   const steps = [];
-  let currentStep = {
-    current: null,
-    openSet: [...openSet],
-    gScore: { ...gScore },
-    fScore: { ...fScore },
-    path: [],
-    evaluation: null,
-    neighbors: [],
-    neighborEvaluations: [],
-  };
 
-  while (openSet.length > 0) {
-    // Find node with lowest fScore
-    let lowestFScore = Infinity;
-    let current = null;
+  while (!openQueue.isEmpty()) {
+    // Extract node with lowest fScore
+    const { element: current } = openQueue.dequeue();
 
-    openSet.forEach((node) => {
-      if (fScore[node] < lowestFScore) {
-        lowestFScore = fScore[node];
-        current = node;
+    // Skip if already processed
+    if (closedSet.has(current)) continue;
+
+    // Process neighbors and build evaluation data
+    const neighbors = getNeighbors(current);
+    const neighborEvaluations = [];
+    
+    neighbors.forEach(neighbor => {
+      if (closedSet.has(neighbor)) {
+        neighborEvaluations.push({
+          neighbor,
+          skipped: true
+        });
+        return;
       }
+      
+      const tentativeG = gScore[current] + getEdgeWeight(current, neighbor);
+      const better = tentativeG < gScore[neighbor];
+      
+      neighborEvaluations.push({
+        neighbor,
+        skipped: false,
+        better,
+        tentativeGScore: tentativeG,
+        currentGScore: gScore[neighbor],
+        newFScore: better ? tentativeG + heuristics[neighbor] : null
+      });
     });
 
-    // Record step before processing
-    currentStep = {
+    // Record step
+    steps.push({
       current,
-      openSet: [...openSet],
+      evaluation: `Evaluating node ${current} with g(n)=${gScore[current].toFixed(1)} and f(n)=${fScore[current].toFixed(1)}`,
+      openSet: openQueue.items.map(q => q.element),
       gScore: { ...gScore },
       fScore: { ...fScore },
       path: reconstructPath(cameFrom, current),
-      evaluation: `Selected ${current}: f(n) = ${fScore[current].toFixed(1)} = g(n): ${gScore[current].toFixed(1)} + h(n): ${heuristics[current]}`,
-      neighbors: [],
-      neighborEvaluations: [],
-    };
+      neighbors: neighbors,
+      neighborEvaluations: neighborEvaluations
+    });
 
-    // Goal reached
+    // Check goal
     if (current === goal) {
-      steps.push(currentStep);
       return {
         success: true,
         path: reconstructPath(cameFrom, current),
@@ -115,58 +134,22 @@ export const aStarSearch = () => {
       };
     }
 
-    // Remove current from openSet
-    openSet.splice(openSet.indexOf(current), 1);
     closedSet.add(current);
 
-    // Process neighbors
-    const neighbors = getNeighbors(current);
-    currentStep.neighbors = [...neighbors];
+    // Process neighbors for algorithm logic
+    getNeighbors(current).forEach((neighbor) => {
+      if (closedSet.has(neighbor)) return;
 
-    neighbors.forEach((neighbor) => {
-      // Skip neighbors that have already been settled
-      if (closedSet.has(neighbor)) {
-        currentStep.neighborEvaluations.push({
-          neighbor,
-          tentativeGScore: null,
-          currentGScore: gScore[neighbor],
-          better: false,
-          newFScore: null,
-          skipped: true
-        });
-        return; // Skip this neighbor
-      }
-
-      // Calculate tentative gScore
-      const tentativeGScore = gScore[current] + getEdgeWeight(current, neighbor);
-
-      const neighborEval = {
-        neighbor,
-        tentativeGScore,
-        currentGScore: gScore[neighbor],
-        better: tentativeGScore < gScore[neighbor],
-        newFScore: null,
-      };
-
-      if (tentativeGScore < gScore[neighbor]) {
-        // This path is better
+      const tentativeG = gScore[current] + getEdgeWeight(current, neighbor);
+      if (tentativeG < gScore[neighbor]) {
         cameFrom[neighbor] = current;
-        gScore[neighbor] = tentativeGScore;
-        fScore[neighbor] = tentativeGScore + heuristics[neighbor];
-        neighborEval.newFScore = fScore[neighbor];
-
-        if (!openSet.includes(neighbor)) {
-          openSet.push(neighbor);
-        }
+        gScore[neighbor] = tentativeG;
+        fScore[neighbor] = tentativeG + heuristics[neighbor];
+        openQueue.enqueue(neighbor, fScore[neighbor]);
       }
-
-      currentStep.neighborEvaluations.push(neighborEval);
     });
-
-    steps.push(currentStep);
   }
 
   // No path found
   return { success: false, path: [], steps };
 };
-
