@@ -4,9 +4,9 @@ const AlgorithmDetails = ({ currentStep, isLastStep, searchResult }) => {
   if (!currentStep) return null;
   
   const closedSet = searchResult.steps
-    .slice(0, searchResult.steps.indexOf(currentStep))
+  .slice(0, searchResult.steps.indexOf(currentStep))
     .map(step => step.current)
-    .filter(node => node !== null && node !== currentStep.current);
+    .filter(node => node !== null);
   
   return (
     <div className="border rounded p-2" style={{ width: '350px' }}>
@@ -64,15 +64,18 @@ const AlgorithmDetails = ({ currentStep, isLastStep, searchResult }) => {
         </p>
       </div>
 
-      {currentStep.neighbors.length > 0 && (
+            {currentStep.neighbors.length > 0 && (
         <div>
           <h4 className="font-medium">Neighbor Evaluations:</h4>
           <ul className="text-sm" style={{ listStyleType: 'none', padding: 0, margin: 0 }}>
             {currentStep.neighborEvaluations.map((evaluation, i) => (
               <li key={i} className="mb-1">
-                <span className="font-medium">{evaluation.neighbor}</span>
-                :
-                {evaluation.better ? (
+                <span className="font-medium">{evaluation.neighbor}</span>:{" "}
+                {evaluation.skipped ? (
+                  <span className="text-gray-500">
+                    Skipped (already in closed set)
+                  </span>
+                ) : evaluation.better ? (
                   <span>
                     New path is better! g(n):{" "}
                     {evaluation.tentativeGScore.toFixed(1)} {"<"}{" "}
@@ -89,7 +92,7 @@ const AlgorithmDetails = ({ currentStep, isLastStep, searchResult }) => {
                       : evaluation.currentGScore.toFixed(1)}
                   </span>
                 )}
-                {evaluation.newFScore != null && (
+                {!evaluation.skipped && evaluation.newFScore != null && (
                   <span>
                     {" "}
                     → New f(n): {evaluation.newFScore.toFixed(1)}

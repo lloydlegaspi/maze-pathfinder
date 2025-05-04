@@ -55,6 +55,7 @@ export const aStarSearch = () => {
   const heuristics = calculateHeuristics();
 
   const openSet = [start];
+  const closedSet = new Set();
   const cameFrom = {};
   const gScore = {};
   const fScore = {};
@@ -116,12 +117,26 @@ export const aStarSearch = () => {
 
     // Remove current from openSet
     openSet.splice(openSet.indexOf(current), 1);
+    closedSet.add(current);
 
     // Process neighbors
     const neighbors = getNeighbors(current);
     currentStep.neighbors = [...neighbors];
 
     neighbors.forEach((neighbor) => {
+      // Skip neighbors that have already been settled
+      if (closedSet.has(neighbor)) {
+        currentStep.neighborEvaluations.push({
+          neighbor,
+          tentativeGScore: null,
+          currentGScore: gScore[neighbor],
+          better: false,
+          newFScore: null,
+          skipped: true
+        });
+        return; // Skip this neighbor
+      }
+
       // Calculate tentative gScore
       const tentativeGScore = gScore[current] + getEdgeWeight(current, neighbor);
 

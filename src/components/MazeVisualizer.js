@@ -1,6 +1,9 @@
 import React from 'react';
 import { mazeData, nodesWithHeuristics, edges, edgeWeights } from '../utils/mazeData';
 import {calculateHeuristics  } from '../utils/aStarAlgorithm';
+import mouseIcon from '../images/mouse1.png';
+import mouseWithCheeseIcon from '../images/mouse2.jpg';
+import cheeseIcon from '../images/cheese.png';
 
 const MazeVisualizer = ({ currentStep }) => {
   const heuristics = calculateHeuristics();
@@ -79,6 +82,72 @@ const MazeVisualizer = ({ currentStep }) => {
             const x = (col - 1) * 50 + 25;
             const y = (row - 1) * 50 + 25;
 
+            // Goal node (cheese)
+            if (node === "(10, 15)" && (!currentStep || currentStep.current !== node)) {
+              return (
+                <g key={`node-${node}`}>
+                  <image
+                    href={cheeseIcon}
+                    x={x - 15}
+                    y={y - 15}
+                    height="30"
+                    width="30"
+                  />
+                  <text x={x} y={y - 15} textAnchor="middle" fontSize="8">
+                    {node}
+                  </text>
+                  
+                  <text x={x} y={y + 20} textAnchor="middle" fontSize="8" fill="blue">
+                    {heuristics[node]}
+                  </text>
+                </g>
+              );
+            }
+
+            // Moving mouse agent: display at the current node
+            if (currentStep && currentStep.current === node) {
+              const isAtGoal = node === "(10, 15)"; // Check if mouse reached the goal
+              
+              return (
+                <g key={`node-${node}`}>
+                  <image
+                    href={isAtGoal ? mouseWithCheeseIcon : mouseIcon}
+                    x={x - 15}
+                    y={y - 15}
+                    height="30"
+                    width="30"
+                  />
+                  <text x={x} y={y - 15} textAnchor="middle" fontSize="8">
+                    {node}
+                  </text>
+                </g>
+              );
+            }
+
+            // Display start node normally when not current
+            if (node === "(1, 1)" && (!currentStep || currentStep.current !== node)) {
+              return (
+                <g key={`node-${node}`}>
+                  <circle
+                    cx={x}
+                    cy={y}
+                    r={12}
+                    strokeDasharray="3,3"
+                    stroke="black"
+                    strokeWidth="1"
+                    fill="lightgreen"
+                  />
+                  <text x={x} y={y + 3} textAnchor="middle" fontSize="8">
+                    {heuristics[node]}
+                  </text>
+                  <text x={x} y={y + 20} textAnchor="middle" fontSize="8" fill="blue">
+                    {heuristics[node]}
+                  </text>
+                </g>
+              );
+            }
+
+            // All other nodes
             return (
               <g key={`node-${node}`}>
                 <circle
@@ -89,20 +158,14 @@ const MazeVisualizer = ({ currentStep }) => {
                   stroke="black"
                   strokeWidth="1"
                   fill={
-                    node === "(1, 1)"
-                      ? "lightgreen"
-                      : node === "(10, 15)"
-                        ? "lightcoral"
-                        : currentStep && currentStep.current === node
-                          ? "yellow"
-                          : currentStep && currentStep.path.includes(node)
-                            ? "lightblue"
-                            : currentStep && currentStep.openSet.includes(node)
-                              ? "lightgray"
-                              : "white"
+                    currentStep && currentStep.path.includes(node)
+                      ? "lightblue"
+                      : currentStep && currentStep.openSet.includes(node)
+                        ? "lightgray"
+                        : "white"
                   }
                 />
-                <text x={x} y={y + 3} textAnchor="middle" fontSize="8">
+                <text x={x} y={y + 3} textAnchor="middle" fontSize="8" fontWeight="bold">
                   {heuristics[node]}
                 </text>
                 <text x={x} y={y - 15} textAnchor="middle" fontSize="8">
@@ -155,7 +218,8 @@ const MazeVisualizer = ({ currentStep }) => {
                   x2={x2}
                   y2={y2}
                   stroke={isInPath ? "blue" : "gray"}
-                  strokeWidth={isInPath ? "3" : "1"}
+                  strokeWidth={isInPath ? "2" : "1"}
+                  opacity={isInPath ? "0.6" : "0.4"}
                 />
                 <circle
                   cx={midX}
@@ -163,6 +227,7 @@ const MazeVisualizer = ({ currentStep }) => {
                   r={6}
                   fill="white"
                   stroke="gray"
+                  strokeOpacity="0.5"
                 />
                 <text
                   x={midX}
