@@ -81,6 +81,8 @@ export const aStarSearch = () => {
   const steps = [];
 
   while (!openQueue.isEmpty()) {
+    const openSetBeforeDequeue = [...openQueue.items.map(q => q.element)];
+
     // Extract node with lowest fScore
     const { element: current } = openQueue.dequeue();
 
@@ -116,8 +118,9 @@ export const aStarSearch = () => {
     // Record step
     steps.push({
       current,
-      evaluation: `Evaluating node ${current} with g(n)=${gScore[current].toFixed(1)} and f(n)=${fScore[current].toFixed(1)}`,
-      openSet: openQueue.items.map(q => q.element),
+      evaluation: `${current}: g(n)=${gScore[current].toFixed(1)} + h(n)=${heuristics[current].toFixed(1)} = f(n)=${fScore[current].toFixed(1)}`,
+      openSet: openSetBeforeDequeue,
+      currentOpenSet: openQueue.items.map(q => q.element),
       gScore: { ...gScore },
       fScore: { ...fScore },
       path: reconstructPath(cameFrom, current),
