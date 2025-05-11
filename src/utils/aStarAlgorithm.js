@@ -1,7 +1,7 @@
 import { nodesWithHeuristics, edges, edgeWeights } from './mazeData';
 import { PriorityQueue } from '../utils/pQueue';
 
-// Build adjacency list for O(1) neighbor access
+// Build adjacency list from edges
 const buildAdjacencyList = () => {
   const adjacencyList = {};
   edges.forEach(([a, b]) => {
@@ -15,7 +15,7 @@ const buildAdjacencyList = () => {
 
 const adjacencyList = buildAdjacencyList();
 
-// Calculate Manhattan distance for heuristic
+// Manhattan distance calculation
 export const calculateManhattanDistance = (pos1, pos2) => {
   const [row1, col1] = pos1.replace(/[()]/g, "").split(", ").map(Number);
   const [row2, col2] = pos2.replace(/[()]/g, "").split(", ").map(Number);
@@ -41,12 +41,12 @@ export const getEdgeWeight = (node1, node2) => {
   return edgeWeights[key1] || edgeWeights[key2] || Infinity;
 };
 
-// Get neighbors of a node using adjacency list
+// Get neighbors of a node
 export const getNeighbors = (node) => {
   return adjacencyList[node] || [];
 };
 
-// Reconstruct path from start to current based on cameFrom map
+// Reconstruct path from start to current node using the cameFrom map
 export const reconstructPath = (cameFrom, current) => {
   const totalPath = [current];
   while (cameFrom[current]) {
@@ -56,7 +56,7 @@ export const reconstructPath = (cameFrom, current) => {
   return totalPath;
 };
 
-// A* search algorithm with priority queue
+// A* search algorithm
 export const aStarSearch = () => {
   const start = "(1, 1)";
   const goal = "(10, 15)";
@@ -68,7 +68,7 @@ export const aStarSearch = () => {
   const gScore = {};
   const fScore = {};
 
-  // Initialize scores
+  // Initialize gScore and fScore for all nodes
   nodesWithHeuristics.forEach((node) => {
     gScore[node] = Infinity;
     fScore[node] = Infinity;
@@ -76,20 +76,22 @@ export const aStarSearch = () => {
   gScore[start] = 0;
   fScore[start] = heuristics[start];
 
+  // Enqueue the start node
   openQueue.enqueue(start, fScore[start]);
 
   const steps = [];
 
-  while (!openQueue.isEmpty()) {
+  // Main loop
+  while (!openQueue.isEmpty()) { // Continue until the open set is empty
     const openSetBeforeDequeue = [...openQueue.items.map(q => q.element)];
 
-    // Extract node with lowest fScore
+    // Dequeue the node with the lowest fScore
     const { element: current } = openQueue.dequeue();
 
     // Skip if already processed
     if (closedSet.has(current)) continue;
 
-    // Process neighbors and build evaluation data
+    // Evaluate neighbors
     const neighbors = getNeighbors(current);
     const neighborEvaluations = [];
     
@@ -115,7 +117,7 @@ export const aStarSearch = () => {
       });
     });
 
-    // Record step
+    // Log the current step
     steps.push({
       current,
       evaluation: `${current}: g(n)=${gScore[current].toFixed(1)} + h(n)=${heuristics[current].toFixed(1)} = f(n)=${fScore[current].toFixed(1)}`,
@@ -128,7 +130,7 @@ export const aStarSearch = () => {
       neighborEvaluations: neighborEvaluations
     });
 
-    // Check goal
+    // Check goal condition
     if (current === goal) {
       return {
         success: true,
@@ -139,7 +141,7 @@ export const aStarSearch = () => {
 
     closedSet.add(current);
 
-    // Process neighbors for algorithm logic
+    // Process neighbors
     getNeighbors(current).forEach((neighbor) => {
       if (closedSet.has(neighbor)) return;
 

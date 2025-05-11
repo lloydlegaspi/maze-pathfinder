@@ -8,7 +8,8 @@ const ControlPanel = ({
   resetSearch,
   fastForward,
   currentStepIndex, 
-  totalSteps 
+  totalSteps,
+  algorithmName = "A*" 
 }) => {
   return (
     <div className="text-center flex flex-col items-center">
@@ -17,7 +18,7 @@ const ControlPanel = ({
           onClick={startSearch}
           className="px-4 py-2 bg-blue-500 text-white rounded"
         >
-          Start A* Search
+          Start {algorithmName} Search
         </button>
       ) : (
         <div className="text-center">
@@ -66,7 +67,7 @@ const ControlPanel = ({
             </button>
           </div>
           <div>
-            Step {currentStepIndex + 1} of {totalSteps}
+            Step {currentStepIndex + 1} of {totalSteps} (Nodes Expanded)
           </div>
         </div>
       )}

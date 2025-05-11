@@ -1,5 +1,3 @@
-import React from "react";
-
 const AlgorithmDetails = ({ currentStep, isLastStep, searchResult }) => {
   if (!currentStep) return null;
 
