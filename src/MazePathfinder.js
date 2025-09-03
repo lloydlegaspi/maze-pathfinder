@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import MazeVisualizer from "./components/MazeVisualizer";
 import Legend from "./components/Legend";
 import ControlPanel from "./components/ControlPanel";
@@ -6,6 +6,8 @@ import AlgorithmDetails from "./components/AlgorithmDetails";
 import { aStarSearch } from "./utils/aStarAlgorithm";
 import { uniformCostSearch } from "./utils/uniformCostSearch";
 import { greedyBestFirstSearch } from "./utils/greedyBestFirstSearch";
+import playIcon from "./images/audio.png";  
+import pauseIcon from "./images/no-audio.png";
 
 const MazePathfinder = () => {
   // State for the simulation
@@ -13,6 +15,89 @@ const MazePathfinder = () => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isSearchStarted, setIsSearchStarted] = useState(false);
   const [algorithm, setAlgorithm] = useState("astar"); // default to A*
+
+  // Background music state
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const [audioError, setAudioError] = useState(false);
+  const audioRef = useRef(null);
+
+  // Initialize audio on component mount
+  useEffect(() => {
+    try {
+      // Create audio element
+      audioRef.current = new Audio("/music/bgmusic.mp3");
+      audioRef.current.loop = true;
+      audioRef.current.volume = 0.1;
+      
+      // Add error handler
+      audioRef.current.addEventListener('error', (e) => {
+        console.error("Audio error:", e);
+        setAudioError(true);
+        setIsMusicPlaying(false);
+      });
+      
+      // Attempt to play music automatically when component mounts
+      const playPromise = audioRef.current.play();
+      
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setIsMusicPlaying(true);
+            console.log("Autoplay started successfully");
+          })
+          .catch(error => {
+            // Auto-play was prevented by browser policy
+            console.log("Autoplay was prevented:", error);
+            // We don't set error state here as this is expected behavior in many browsers
+          });
+      }
+      
+      // Cleanup on unmount
+      return () => {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.removeEventListener('error', () => {});
+          audioRef.current = null;
+        }
+      };
+    } catch (err) {
+      console.error("Audio initialization error:", err);
+      setAudioError(true);
+    }
+  }, []);
+
+  // Toggle background music
+  const toggleMusic = () => {
+    if (!audioRef.current) {
+      setAudioError(true);
+      return;
+    }
+    
+    try {
+      if (isMusicPlaying) {
+        audioRef.current.pause();
+      } else {
+        // Reset the audio error state when attempting to play
+        setAudioError(false);
+        const playPromise = audioRef.current.play();
+        
+        // Handle the play promise to catch any errors
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            console.error("Audio play error:", error);
+            setAudioError(true);
+            setIsMusicPlaying(false);
+          });
+        }
+      }
+      setIsMusicPlaying(!isMusicPlaying);
+    } catch (err) {
+      console.error("Audio toggle error:", err);
+      setAudioError(true);
+      setIsMusicPlaying(false);
+    }
+  };
+
 
   // Start the search
   const startSearch = () => {
@@ -113,7 +198,26 @@ const MazePathfinder = () => {
     currentStepIndex === searchResult.steps.length - 1;
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto relative">
+      <button
+        onClick={toggleMusic}
+        className={`absolute top-2 right-2 px-3 py-2 rounded ${
+          audioError ? "bg-red-500" : "bg-blue-500"
+        } text-white flex items-center gap-1`}
+        title={audioError ? "Audio file not found" : isMusicPlaying ? "Pause Music" : "Play Music"}
+      >
+        {isMusicPlaying ? (
+          <>
+            <img src={playIcon} alt="Pause" className="w-4 h-4" />
+          </>
+        ) : (
+          <>
+            <img src={pauseIcon} alt="Play" className="w-4 h-4" />
+            {audioError && <span className="text-xs ml-1">Error</span>}
+          </>
+        )}
+      </button>
+
       <div className="flex flex-col items-center p-2">
         <h1 className="text-2xl font-bold mb-4">
           Maze Pathfinder using {getAlgorithmName()}
